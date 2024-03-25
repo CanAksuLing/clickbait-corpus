@@ -4,31 +4,32 @@ from datetime import datetime
 import newspaper
 
 
-def build_source(url: str):
+def build_source(url: str) -> newspaper.Source:
     output = newspaper.build(url, language="tr", memoize_articles=False)
     return output
 
 
-def download_and_parse_article(article:newspaper.article.Article):
-    article.download()
-    article.parse()
-    return 0
+def download_and_parse_article(article:newspaper.article.Article) -> None:
+    if article.download_state != 2:
+        article.download()
+        download_and_parse_article(article)
+    elif article.is_parsed == False:
+        article.parse()
 
 
-def test_metadata(article:newspaper.article.Article):
+def test_metadata(article:newspaper.article.Article) -> bool:
     download_and_parse_article(article)
-    metadata = article.meta_data
     has_title = isinstance(article.title, str)
     has_description = isinstance(article.meta_description, str)
     has_text = isinstance(article.text, str)
     has_url = isinstance(article.url, str)
     has_img_url = isinstance(article.meta_img, str)
-    has_date = 'dateModified' in metadata
+    has_date = 'dateModified' in article.meta_data
     return has_title & has_description & has_text &\
         has_url & has_img_url & has_date
 
 
-def get_data(article: newspaper.article.Article, publisher: str):
+def get_metadata(article: newspaper.article.Article, publisher: str) -> dict:
     download_and_parse_article(article)
     metadata_date = article.meta_data["dateModified"]
     article_date = datetime.strptime(metadata_date, '%Y-%m-%dT%H:%M:%S%z')
@@ -59,11 +60,4 @@ news_sites = {
     "haberler": "https://www.haberler.com",
     "onedio": "https://www.onedio.com", # Failed test
 }
-
-for site, url in news_sites.items():
-    match site:
-        case "mynet" | "sabah" | "onedio":
-            print("Skipped")
-        case _:
-            print("All good!")
 
