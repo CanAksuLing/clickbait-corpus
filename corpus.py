@@ -1,31 +1,28 @@
 import newspaper
-import json
+import pandas
 
 
 def build_source(site_url):
-    source = newspaper.build(site_url, language="tr")
+    source = newspaper.build(site_url, language="tr", memoize_articles=False)
     return source
 
 
 def download_articles(news_list):
-    newspaper.news_pool.set(news_list, threads_per_source=9)
+    newspaper.news_pool.set(news_list, threads_per_source=10)
     newspaper.news_pool.join()
 
 
 def test_article(article: newspaper.article.Article) -> bool:
-    # download_and_parse_article(article)
     if article.is_parsed:
         has_title = isinstance(article.title, str)
         has_description = isinstance(article.meta_description, str)
-        has_text = isinstance(article.text, str)
+        # has_text = isinstance(article.text, str)
         has_url = isinstance(article.url, str)
         has_img_url = isinstance(article.meta_img, str)
         has_date = isinstance(article.meta_data["dateModified"], str)
-        not_media_news = article.is_media_news is False
-
-        return has_title & has_description & has_text &\
-            has_url & has_img_url & has_date & not_media_news &\
-            article.is_valid_body()
+        not_media_news = article.is_media_news() is False
+        return has_title & has_description &\
+            has_url & has_img_url & has_date & not_media_news
     else:
         article.parse()
         test_article(article)
@@ -36,7 +33,7 @@ def get_metadata(article: newspaper.article.Article, publisher: str) -> dict:
     output = {
         "title": article.title,
         "description": article.meta_description,
-        "text": article.text,
+        # "text": article.text,
         "url": article.url,
         "img_url": article.meta_img,
         "publishing_date": article.meta_data["dateModified"],
@@ -46,39 +43,20 @@ def get_metadata(article: newspaper.article.Article, publisher: str) -> dict:
 
 
 def main():
-    hurriyet = build_source(NEWS_SITES['hurriyet'])
-    sozcu = build_source(NEWS_SITES['sozcu'])
-    milliyet = build_source(NEWS_SITES['milliyet'])
-    haberturk = build_source(NEWS_SITES['haberturk'])
-    yenicag = build_source(NEWS_SITES['yenicag'])
-    cumhuriyet = build_source(NEWS_SITES['cumhuriyet'])
-    haberlercom = build_source(NEWS_SITES['haberler.com'])
-    haber7 = build_source(NEWS_SITES['haber7'])
-    ntv = build_source(NEWS_SITES['ntv'])
-    ensonhaber = build_source(NEWS_SITES['ensonhaber'])
-
-    print("Sources built")
-
-    news_sites = [hurriyet, sozcu, milliyet,
-                  haberturk, yenicag, cumhuriyet,
-                  haberlercom, haber7, ntv,
-                  ensonhaber]
-
-    download_articles(news_sites)
-
-    print("Articles downloaded")
-
-    for source in news_sites:
-        for article in source.articles:
+    for site_name, site_url in NEWS_SITES.items():
+        site_source = build_source(NEWS_SITES[site_name])
+        source_list = [site_source]
+        source_data = []
+        download_articles(source_list)
+        for article in site_source.articles:
+            article.parse()
             if test_article(article):
-                article_data = get_metadata(article,
-                                            f'{source=}'.split('=')[0])
-                with open('./news-data.json', 'a+') as file:
-                    old_data = json.load(file)
-                    old_data.append(article_data)
-                    json.dump(old_data)
-            else:
-                continue
+                article_metadata = get_metadata(article, site_name)
+                source_data.append(article_metadata)
+        print(len(source_data))
+        data_frame = pandas.DataFrame.from_records(source_data)
+        data_frame.to_csv(f'{site_name}-data.csv', encoding='utf-8')
+        print(f"{site_name} completed")
 
 
 # 13 most visited Turkish news sites
