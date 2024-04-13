@@ -55,7 +55,7 @@ def main():
                 source_data.append(article_metadata)
         print(len(source_data))
         data_frame = pandas.DataFrame.from_records(source_data)
-        data_frame.to_csv(f'./data/{site_name}-data.csv', encoding='utf-8')
+        data_frame.to_csv(f'./data/{site_name}-data.csv', encoding='utf-8', index=False)
         print(f'{site_name} completed')
 
 
