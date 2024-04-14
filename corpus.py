@@ -1,5 +1,6 @@
 import newspaper
 import pandas
+import gc
 
 
 def build_source(site_url):
@@ -55,7 +56,11 @@ def main():
                 source_data.append(article_metadata)
         print(len(source_data))
         data_frame = pandas.DataFrame.from_records(source_data)
-        data_frame.to_csv(f'./data/{site_name}-data.csv', encoding='utf-8', index=False)
+        data_frame.to_csv(f'./data/{site_name}-data.csv',
+                          encoding='utf-8', index=False)
+        del source_data
+        del data_frame
+        gc.collect()
         print(f'{site_name} completed')
 
 
