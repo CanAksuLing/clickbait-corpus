@@ -106,7 +106,6 @@ soupsieve==2.5
 stack-data==0.6.3
 terminado==0.18.1
 tinycss2==1.2.1
-tinysegmenter==0.4
 tldextract==5.1.2
 tornado==6.4
 tqdm==4.66.2
