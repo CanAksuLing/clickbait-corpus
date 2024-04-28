@@ -37,7 +37,7 @@ def get_metadata(article: newspaper.article.Article, publisher: str) -> dict:
         # 'text': article.text,
         'url': article.url,
         'img_url': article.meta_img,
-        'publishing_date': article.meta_data['dateModified'],
+        'publication_date': article.meta_data['dateModified'],
         'publisher': publisher,
     }
     return output
